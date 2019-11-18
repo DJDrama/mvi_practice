@@ -19,15 +19,11 @@ import javax.inject.Singleton
     ]
 )
 interface AppComponent : AndroidInjector<BaseApplication>{
-
     val sessionManager: SessionManager // must add here b/c injecting into abstract class
-
     @Component.Builder
     interface Builder{
-
         @BindsInstance
         fun application(application: Application): Builder
-
         fun build(): AppComponent
     }
 }
