@@ -11,6 +11,7 @@ import androidx.lifecycle.Observer
 
 import com.codingwithmitch.openapi.R
 import com.codingwithmitch.openapi.models.AuthToken
+import com.codingwithmitch.openapi.ui.auth.state.AuthStateEvent
 import com.codingwithmitch.openapi.ui.auth.state.LoginFields
 import com.codingwithmitch.openapi.util.GenericApiResponse
 import com.codingwithmitch.openapi.util.GenericApiResponse.*
@@ -30,6 +31,7 @@ class LoginFragment : BaseAuthFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         subscribeObservers()
+        login_button.setOnClickListener { login() }
 
     }
 
@@ -44,6 +46,15 @@ class LoginFragment : BaseAuthFragment() {
                 }
             }
         })
+    }
+
+    private fun login(){
+        viewModel.setStateEvent(
+            AuthStateEvent.LoginAttemptEvent(
+                input_email.text.toString(),
+                input_password.text.toString()
+            )
+        )
     }
 
     override fun onDestroyView() {
