@@ -3,6 +3,8 @@ package com.codingwithmitch.openapi.session
 import android.app.Application
 import android.content.Context
 import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkRequest
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -65,6 +67,7 @@ constructor(
             }
         }
     }
+
 
 
     fun isConnectedToTheInternet(): Boolean{
