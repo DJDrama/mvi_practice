@@ -3,6 +3,7 @@ package com.codingwithmitch.openapi.ui.auth
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavController
@@ -14,17 +15,11 @@ import com.codingwithmitch.openapi.ui.ResponseType
 import com.codingwithmitch.openapi.ui.ResponseType.*
 import com.codingwithmitch.openapi.ui.main.MainActivity
 import com.codingwithmitch.openapi.viewmodels.ViewModelProviderFactory
+import kotlinx.android.synthetic.main.activity_main.*
 import javax.inject.Inject
 
-class AuthActivity : BaseActivity(), NavController.OnDestinationChangedListener{
-    override fun onDestinationChanged(
-        controller: NavController,
-        destination: NavDestination,
-        arguments: Bundle?
-    ) {
-        viewModel.cancelActiveJobs()
+class AuthActivity : BaseActivity(), NavController.OnDestinationChangedListener {
 
-    }
 
     @Inject
     lateinit var providerFactory: ViewModelProviderFactory
@@ -39,29 +34,16 @@ class AuthActivity : BaseActivity(), NavController.OnDestinationChangedListener{
         subscribeObservers()
     }
 
-    fun subscribeObservers(){
-        viewModel.dataState.observe(this, Observer {dataState->
-            dataState.data?.let{data->
-                data.data?.let{event->
-                    event.getContentIfNotHandled()?.let{
-                        it.authToken?.let{
+    fun subscribeObservers() {
+
+        viewModel.dataState.observe(this, Observer { dataState ->
+            onDataStateChange(dataState)
+            dataState.data?.let { data ->
+                data.data?.let { event ->
+                    event.getContentIfNotHandled()?.let {
+                        it.authToken?.let {
                             Log.d(TAG, "AuthActivity, DataState : ${it}")
                             viewModel.setAuthToken(it)
-                        }
-                    }
-                }
-                data.response?.let{event->
-                    event.getContentIfNotHandled()?.let{
-                        when(it.responseType){
-                            is Dialog->{
-
-                            }
-                            is Toast->{
-
-                            }
-                            is None->{
-                                Log.e(TAG, "AuthActivity, Response: ${it.message}")
-                            }
                         }
                     }
                 }
@@ -69,23 +51,40 @@ class AuthActivity : BaseActivity(), NavController.OnDestinationChangedListener{
 
         })
         viewModel.viewState.observe(this, Observer {
-            it.authToken?.let{authToken->
+            it.authToken?.let { authToken ->
                 sessionManager.login(authToken)
             }
         })
-        sessionManager.cachedToken.observe(this, Observer {authToken->
+        sessionManager.cachedToken.observe(this, Observer { authToken ->
             Log.d(TAG, "AuthActivity: subsribeOBservers: AuthToken : ${authToken}")
-            if(authToken != null && authToken.account_pk != -1 && authToken.token != null){
+            if (authToken != null && authToken.account_pk != -1 && authToken.token != null) {
                 navMainActivity()
             }
         })
     }
-    private fun navMainActivity(){
+
+    private fun navMainActivity() {
         val intent = Intent(this, MainActivity::class.java)
         startActivity(intent)
         finish()
     }
 
+    override fun displayProgressBar(bool: Boolean) {
+        if (bool) {
+            progress_bar.visibility = View.VISIBLE
+        } else {
+            progress_bar.visibility = View.GONE
+        }
+    }
+
+    override fun onDestinationChanged(
+        controller: NavController,
+        destination: NavDestination,
+        arguments: Bundle?
+    ) {
+        viewModel.cancelActiveJobs()
+
+    }
 }
 
 
