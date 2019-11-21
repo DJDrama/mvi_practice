@@ -77,7 +77,7 @@ abstract class NetworkBoundResource<ResponseObject, ViewStateType>
 
 
 
-    private fun onCompleteJob(dataState: DataState<ViewStateType>){
+    fun onCompleteJob(dataState: DataState<ViewStateType>){
         GlobalScope.launch(Main){
             job.complete()
             setValue(dataState)
