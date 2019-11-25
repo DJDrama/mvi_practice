@@ -1,5 +1,6 @@
 package com.codingwithmitch.openapi.di.auth
 
+import android.content.SharedPreferences
 import com.codingwithmitch.openapi.api.auth.OpenApiAuthService
 import com.codingwithmitch.openapi.persistence.AccountPropertiesDao
 import com.codingwithmitch.openapi.persistence.AuthTokenDao
@@ -14,11 +15,7 @@ class AuthModule{
 
     @AuthScope
     @Provides
-    fun provideFakeApiService(retrofitBuilder: Retrofit.Builder): OpenApiAuthService{
-//        return Retrofit.Builder()
-//            .baseUrl("https://open-api.xyz")
-//            .build()
-//            .create(OpenApiAuthService::class.java)
+    fun provideOpenApiService(retrofitBuilder: Retrofit.Builder): OpenApiAuthService{
         return retrofitBuilder
             .build()
             .create(OpenApiAuthService::class.java)
@@ -30,13 +27,17 @@ class AuthModule{
         sessionManager: SessionManager,
         authTokenDao: AuthTokenDao,
         accountPropertiesDao: AccountPropertiesDao,
-        openApiAuthService: OpenApiAuthService
+        openApiAuthService: OpenApiAuthService,
+        sharedPreferences: SharedPreferences,
+        editor: SharedPreferences.Editor
         ): AuthRepository {
         return AuthRepository(
             authTokenDao,
             accountPropertiesDao,
             openApiAuthService,
-            sessionManager
+            sessionManager,
+            sharedPreferences,
+            editor
         )
     }
 

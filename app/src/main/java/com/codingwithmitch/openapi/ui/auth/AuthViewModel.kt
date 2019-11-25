@@ -34,12 +34,12 @@ constructor(
 
             }
             is RegisterAttemptEvent->{
-                return authRepository.attempRegistration(
+                return authRepository.attemptRegistration(
                     stateEvent.email, stateEvent.username, stateEvent.password, stateEvent.confirm_password
                 )
             }
             is CheckPreviousAuthEvent->{
-                return AbsentLiveData.create()
+                return authRepository.checkPreviousAuthUser()
             }
         }
     }

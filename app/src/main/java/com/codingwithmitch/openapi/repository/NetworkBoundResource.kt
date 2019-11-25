@@ -1,5 +1,6 @@
 package com.codingwithmitch.openapi.repository
 
+import android.net.NetworkRequest
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
@@ -7,6 +8,7 @@ import com.codingwithmitch.openapi.ui.DataState
 import com.codingwithmitch.openapi.ui.Response
 import com.codingwithmitch.openapi.ui.ResponseType
 import com.codingwithmitch.openapi.util.Constants.Companion.NETWORK_TIMEOUT
+import com.codingwithmitch.openapi.util.Constants.Companion.TESTING_CACHE_DELAY
 import com.codingwithmitch.openapi.util.Constants.Companion.TESTING_NETWORK_DELAY
 import com.codingwithmitch.openapi.util.ErrorHandling
 import com.codingwithmitch.openapi.util.ErrorHandling.Companion.ERROR_CHECK_NETWORK_CONNECTION
@@ -22,6 +24,7 @@ import kotlinx.coroutines.Dispatchers.Main
 abstract class NetworkBoundResource<ResponseObject, ViewStateType>
     (
     isNetworkAvailable: Boolean // is network connection?
+    , isNetworkRequest: Boolean
 ) {
 
     val TAG: String = "AppDebug"
@@ -32,34 +35,49 @@ abstract class NetworkBoundResource<ResponseObject, ViewStateType>
 
     init {
         setJob(initNewJob())
-        setValue(DataState.loading(isLoading=true, cachedData = null))
-        if(isNetworkAvailable){
-            coroutineScope.launch {
-                delay(TESTING_NETWORK_DELAY)
-                withContext(Main){
-                    val apiResponse = createCall()
-                    result.addSource(apiResponse){response->
-                        result.removeSource(apiResponse)
-                        coroutineScope.launch {
-                            handleNetworkCall(response)
-                        }
+        setValue(DataState.loading(isLoading = true, cachedData = null))
 
+        if (isNetworkRequest) {
+            if (isNetworkAvailable) {
+                coroutineScope.launch {
+                    delay(TESTING_NETWORK_DELAY)
+                    withContext(Main) {
+                        val apiResponse = createCall()
+                        result.addSource(apiResponse) { response ->
+                            result.removeSource(apiResponse)
+                            coroutineScope.launch {
+                                handleNetworkCall(response)
+                            }
+
+                        }
                     }
                 }
-            }
-            GlobalScope.launch(IO){
-                delay(NETWORK_TIMEOUT)
-                if(!job.isCompleted){
-                    Log.e(TAG, "NetworkBoundResource: JOB NETWORK TIMEOUT")
-                    job.cancel(CancellationException(UNABLE_TO_RESOLVE_HOST))
+                GlobalScope.launch(IO) {
+                    delay(NETWORK_TIMEOUT)
+                    if (!job.isCompleted) {
+                        Log.e(TAG, "NetworkBoundResource: JOB NETWORK TIMEOUT")
+                        job.cancel(CancellationException(UNABLE_TO_RESOLVE_HOST))
+                    }
                 }
+            } else {
+                onErrorReturn(
+                    UNABLE_TODO_OPERATION_WO_INTERNET,
+                    shouldUseDialog = true,
+                    shouldUseToast = false
+                )
             }
-        }else{
-            onErrorReturn(UNABLE_TODO_OPERATION_WO_INTERNET, shouldUseDialog = true, shouldUseToast = false)
+        } else { //cache
+            coroutineScope.launch {
+                //fake delay for testing cache
+                delay(TESTING_CACHE_DELAY)
+
+                //view data from cache ONLY and return
+                createCacheRequestAndReturn()
+            }
         }
     }
 
-    private suspend fun handleNetworkCall(response: GenericApiResponse<ResponseObject>){
+    private suspend fun handleNetworkCall(response: GenericApiResponse<ResponseObject>) {
         when (response) {
             is ApiSuccessResponse -> {
                 handleApiSuccessResponse(response)
@@ -70,21 +88,24 @@ abstract class NetworkBoundResource<ResponseObject, ViewStateType>
             }
             is ApiEmptyResponse -> {
                 Log.e(TAG, "NetworkBoundResource: Request returned NOTHING (HTTP 204)")
-                onErrorReturn("HTTP 204, Returned nothing.", shouldUseDialog = true, shouldUseToast = false)
+                onErrorReturn(
+                    "HTTP 204, Returned nothing.",
+                    shouldUseDialog = true,
+                    shouldUseToast = false
+                )
             }
         }
     }
 
 
-
-    fun onCompleteJob(dataState: DataState<ViewStateType>){
-        GlobalScope.launch(Main){
+    fun onCompleteJob(dataState: DataState<ViewStateType>) {
+        GlobalScope.launch(Main) {
             job.complete()
             setValue(dataState)
         }
     }
 
-    private fun setValue(dataState: DataState<ViewStateType>){
+    private fun setValue(dataState: DataState<ViewStateType>) {
         result.value = dataState
     }
 
@@ -107,12 +128,14 @@ abstract class NetworkBoundResource<ResponseObject, ViewStateType>
             responseType = ResponseType.Dialog()
         }
 
-        onCompleteJob(DataState.error(
-            response = Response(
-                message = msg,
-                responseType = responseType
+        onCompleteJob(
+            DataState.error(
+                response = Response(
+                    message = msg,
+                    responseType = responseType
+                )
             )
-        ))
+        )
 
     }
 
@@ -134,7 +157,8 @@ abstract class NetworkBoundResource<ResponseObject, ViewStateType>
                                 shouldUseDialog = false,
                                 shouldUseToast = true
                             )
-                        } ?: onErrorReturn(ERROR_UNKNOWN,
+                        } ?: onErrorReturn(
+                            ERROR_UNKNOWN,
                             shouldUseDialog = false,
                             shouldUseToast = true
                         )
@@ -151,6 +175,7 @@ abstract class NetworkBoundResource<ResponseObject, ViewStateType>
 
     fun asLiveData() = result as LiveData<DataState<ViewStateType>>
 
+    abstract suspend fun createCacheRequestAndReturn()
     abstract suspend fun handleApiSuccessResponse(response: ApiSuccessResponse<ResponseObject>)
     abstract fun createCall(): LiveData<GenericApiResponse<ResponseObject>>
     abstract fun setJob(job: Job)
