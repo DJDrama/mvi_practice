@@ -16,6 +16,7 @@ import com.codingwithmitch.openapi.ui.ResponseType.*
 import com.codingwithmitch.openapi.ui.auth.state.AuthStateEvent
 import com.codingwithmitch.openapi.ui.main.MainActivity
 import com.codingwithmitch.openapi.viewmodels.ViewModelProviderFactory
+import com.google.android.material.appbar.AppBarLayout
 import kotlinx.android.synthetic.main.activity_main.*
 import javax.inject.Inject
 
@@ -58,7 +59,7 @@ class AuthActivity : BaseActivity(), NavController.OnDestinationChangedListener 
             }
         })
         sessionManager.cachedToken.observe(this, Observer { authToken ->
-            Log.d(TAG, "AuthActivity: subsribeOBservers: AuthToken : ${authToken}")
+            Log.d(TAG, "AuthActivity: subsribeObservers: AuthToken : $authToken")
             if (authToken != null && authToken.account_pk != -1 && authToken.token != null) {
                 navMainActivity()
             }
@@ -89,6 +90,10 @@ class AuthActivity : BaseActivity(), NavController.OnDestinationChangedListener 
     ) {
         viewModel.cancelActiveJobs()
 
+    }
+
+    override fun expandAppbar() {
+        //ignore
     }
 }
 

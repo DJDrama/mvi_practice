@@ -18,6 +18,7 @@ import com.codingwithmitch.openapi.ui.main.blog.ViewBlogFragment
 import com.codingwithmitch.openapi.util.BottomNavController
 import com.codingwithmitch.openapi.util.BottomNavController.*
 import com.codingwithmitch.openapi.util.setUpNavigation
+import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlinx.android.synthetic.main.activity_main.*
 
@@ -92,6 +93,7 @@ class MainActivity : BaseActivity(),
 
     override fun onGraphChange() {
         //What needs to happen when the graph changes? ex) canceling active jobs
+        expandAppbar()
     }
 
     override fun onReselectNavItem(navController: NavController, fragment: Fragment) = when(fragment){
@@ -125,5 +127,9 @@ class MainActivity : BaseActivity(),
 
     private fun setupActionBar(){
         setSupportActionBar(tool_bar)
+    }
+
+    override fun expandAppbar() {
+        findViewById<AppBarLayout>(R.id.app_bar).setExpanded(true)
     }
 }
