@@ -4,4 +4,6 @@ interface DataStateChangeListener {
     fun onDataStateChange(dataState: DataState<*>?)
 
     fun expandAppbar()
+
+    fun hideSoftKeyboard()
 }
