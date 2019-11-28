@@ -10,6 +10,7 @@ import com.codingwithmitch.openapi.ui.auth.state.AuthStateEvent.*
 import com.codingwithmitch.openapi.ui.auth.state.AuthViewState
 import com.codingwithmitch.openapi.ui.auth.state.LoginFields
 import com.codingwithmitch.openapi.ui.auth.state.RegistrationFields
+import com.codingwithmitch.openapi.util.AbsentLiveData
 import javax.inject.Inject
 
 class AuthViewModel
@@ -35,6 +36,14 @@ constructor(
             }
             is CheckPreviousAuthEvent->{
                 return authRepository.checkPreviousAuthUser()
+            }
+            is None->{
+                return object: LiveData<DataState<AuthViewState>>(){
+                    override fun onActive() {
+                        super.onActive()
+                        value = DataState.data(null, null)
+                    }
+                }
             }
         }
     }
@@ -73,9 +82,13 @@ constructor(
 
 
     fun cancelActiveJobs(){
+        handlePendingData()
         authRepository.cancelActiveJobs()
     }
 
+    fun handlePendingData(){
+        setStateEvent(None())
+    }
     override fun onCleared() {
         super.onCleared()
         cancelActiveJobs()

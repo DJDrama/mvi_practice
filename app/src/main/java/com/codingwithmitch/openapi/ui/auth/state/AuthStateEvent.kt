@@ -14,4 +14,5 @@ sealed class AuthStateEvent{
     ): AuthStateEvent()
 
     class CheckPreviousAuthEvent: AuthStateEvent() //for automatic login
+    class None: AuthStateEvent()
 }
