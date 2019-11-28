@@ -1,5 +1,6 @@
 package com.codingwithmitch.openapi.ui.main.account
 
+import android.accounts.Account
 import androidx.lifecycle.LiveData
 import com.codingwithmitch.openapi.models.AccountProperties
 import com.codingwithmitch.openapi.repository.main.AccountRepository
@@ -32,7 +33,12 @@ constructor(
                 }?: AbsentLiveData.create()
             }
             is UpdateAccountPropertiesEvent -> {
-                return AbsentLiveData.create()
+                return sessionManager.cachedToken.value?.let { authToken ->
+                   authToken.account_pk?.let{pk->
+                       accountRepository.saveAccountProperties(authToken,
+                           AccountProperties(pk, stateEvent.email, stateEvent.username))
+                   }
+                }?: AbsentLiveData.create()
             }
             is ChangePasswordEvent -> {
                 return AbsentLiveData.create()
