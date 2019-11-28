@@ -5,7 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Transformations
 import androidx.lifecycle.ViewModel
 
-abstract class BaseVieModel<StateEvent, ViewState> : ViewModel() {
+abstract class BaseViewModel<StateEvent, ViewState> : ViewModel() {
 
     val TAG: String = "AppDebug"
 
