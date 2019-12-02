@@ -18,5 +18,5 @@ abstract class MainViewModelModule {
     @Binds
     @IntoMap
     @ViewModelKey(BlogViewModel::class)
-    abstract fun bindBlogViewModel(blogViewModel: AccountViewModel): ViewModel
+    abstract fun bindBlogViewModel(blogViewModel: BlogViewModel): ViewModel
 }

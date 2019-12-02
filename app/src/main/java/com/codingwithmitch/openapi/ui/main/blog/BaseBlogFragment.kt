@@ -21,6 +21,7 @@ abstract class BaseBlogFragment : DaggerFragment(){
 
     @Inject
     lateinit var providerFactory: ViewModelProviderFactory
+
     lateinit var viewModel: BlogViewModel
 
     lateinit var stateChangeListener: DataStateChangeListener
@@ -57,4 +58,6 @@ abstract class BaseBlogFragment : DaggerFragment(){
             appBarConfiguration
         )
     }
+
+
 }
