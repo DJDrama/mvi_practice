@@ -23,7 +23,7 @@ class RegisterFragment : BaseAuthFragment() {
         return inflater.inflate(R.layout.fragment_register, container, false)
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {viewModel
         super.onViewCreated(view, savedInstanceState)
         register_button.setOnClickListener {
             register()
