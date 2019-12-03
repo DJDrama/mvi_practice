@@ -9,6 +9,7 @@ import com.codingwithmitch.openapi.session.SessionManager
 import com.codingwithmitch.openapi.ui.BaseViewModel
 import com.codingwithmitch.openapi.ui.DataState
 import com.codingwithmitch.openapi.ui.main.blog.state.BlogStateEvent
+import com.codingwithmitch.openapi.ui.main.blog.state.BlogStateEvent.*
 import com.codingwithmitch.openapi.ui.main.blog.state.BlogViewState
 import com.codingwithmitch.openapi.util.AbsentLiveData
 import javax.inject.Inject
@@ -27,7 +28,7 @@ constructor(
 
     override fun handleStateEvent(stateEvent: BlogStateEvent): LiveData<DataState<BlogViewState>> {
         when(stateEvent){
-            is BlogStateEvent.BlogSearchEvent->{
+            is BlogSearchEvent->{
                 return sessionManager.cachedToken.value?.let{authToken ->
                     blogRepository.searchBlogPosts(
                         authToken,
@@ -35,10 +36,25 @@ constructor(
                     )
                 }?:AbsentLiveData.create()
             }
-            is BlogStateEvent.None->{
+            is CheckAuthorOfBlogPost->{
+                return AbsentLiveData.create()
+            }
+            is None->{
                 return AbsentLiveData.create()
             }
         }
+    }
+
+    fun setBlogPost(blogPost: BlogPost){
+        val update = getCurrrentViewStateOrNew()
+        update.viewBlogFields.blogPost = blogPost
+        _viewState.value = update
+    }
+
+    fun setIsQuthorOfBlogPost(isAuthorOfBlogPost: Boolean){
+        val update = getCurrrentViewStateOrNew()
+        update.viewBlogFields.isAuthorOfBlogPost = isAuthorOfBlogPost
+        _viewState.value = update
     }
 
     fun setQuery(query: String){
@@ -61,7 +77,7 @@ constructor(
         handlePendingData()
     }
     private fun handlePendingData(){
-        setStateEvent(BlogStateEvent.None())
+        setStateEvent(None())
     }
 
     override fun onCleared() {

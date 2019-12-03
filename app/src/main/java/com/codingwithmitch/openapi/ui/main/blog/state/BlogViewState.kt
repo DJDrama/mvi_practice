@@ -5,8 +5,10 @@ import com.codingwithmitch.openapi.persistence.BlogPostDao
 
 data class BlogViewState(
     //BlogFragment Vars
-    var blogFields: BlogFields = BlogFields()
+    var blogFields: BlogFields = BlogFields(),
+
     //ViewBlogFragment Vars
+    var viewBlogFields: ViewBlogFields = ViewBlogFields()
 
     //UpdateBlogFragment Vars
 ){
@@ -14,5 +16,9 @@ data class BlogViewState(
         var blogList: List<BlogPost> = ArrayList(),
         var searchQuery: String = ""
 
+    )
+    data class ViewBlogFields(
+        var blogPost: BlogPost? = null,
+        var isAuthorOfBlogPost: Boolean = false
     )
 }
