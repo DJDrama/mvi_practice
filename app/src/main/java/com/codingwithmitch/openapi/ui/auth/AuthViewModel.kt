@@ -54,7 +54,7 @@ constructor(
             return
         }
         update.registrationFields = registrationFields
-        _viewState.value = update
+        setViewState(update)
 
     }
     fun setLoginFields(loginFields: LoginFields){
@@ -63,7 +63,7 @@ constructor(
             return
         }
         update.loginFields = loginFields
-        _viewState.value = update
+        setViewState(update)
 
     }
 
@@ -73,7 +73,7 @@ constructor(
             return
         }
         update.authToken = authToken
-        _viewState.value = update
+        setViewState(update)
     }
 
     override fun initNewViewState(): AuthViewState {

@@ -33,6 +33,9 @@ abstract class BaseViewModel<StateEvent, ViewState> : ViewModel() {
         }?: initNewViewState()
         return value
     }
+    fun setViewState(viewState: ViewState){
+        _viewState.value = viewState
+    }
 
     abstract fun initNewViewState(): ViewState
 

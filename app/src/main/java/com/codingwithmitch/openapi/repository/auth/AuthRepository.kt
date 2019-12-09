@@ -221,6 +221,13 @@ constructor(
         }.asLiveData()
     }
 
+
+
+
+
+
+
+
     fun checkPreviousAuthUser(): LiveData<DataState<AuthViewState>>{
         val previousAuthUserEmail: String? = sharedPreferences.getString(PreferenceKeys.PREVIOUS_AUTH_USER, null)
 

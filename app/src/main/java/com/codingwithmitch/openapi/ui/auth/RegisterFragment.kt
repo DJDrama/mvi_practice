@@ -23,7 +23,7 @@ class RegisterFragment : BaseAuthFragment() {
         return inflater.inflate(R.layout.fragment_register, container, false)
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {viewModel
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         register_button.setOnClickListener {
             register()
@@ -32,32 +32,33 @@ class RegisterFragment : BaseAuthFragment() {
     }
 
     private fun subscribeObservers() {
-        viewModel.viewState.observe(viewLifecycleOwner, Observer {authViewState->
+        viewModel.viewState.observe(viewLifecycleOwner, Observer { authViewState ->
             authViewState.registrationFields?.let { registrationFields ->
                 registrationFields.registration_email?.let { registration_email ->
                     input_email.setText(registration_email)
                 }
-                registrationFields.registration_username?.let{registration_username->
+                registrationFields.registration_username?.let { registration_username ->
                     input_username.setText(registration_username)
                 }
-                registrationFields.registration_password?.let{registration_password->
+                registrationFields.registration_password?.let { registration_password ->
                     input_password.setText(registration_password)
                 }
-                registrationFields.registration_confirm_password?.let{registration_confirm_password->
+                registrationFields.registration_confirm_password?.let { registration_confirm_password ->
                     input_password_confirm.setText(registration_confirm_password)
                 }
             }
         })
     }
-private    fun register(){
-       viewModel.setStateEvent(
-           AuthStateEvent.RegisterAttemptEvent(
-               input_email.text.toString(),
-               input_username.text.toString(),
-               input_password.text.toString(),
-               input_password_confirm.text.toString()
-           )
-       )
+
+    private fun register() {
+        viewModel.setStateEvent(
+            AuthStateEvent.RegisterAttemptEvent(
+                input_email.text.toString(),
+                input_username.text.toString(),
+                input_password.text.toString(),
+                input_password_confirm.text.toString()
+            )
+        )
     }
 
     override fun onDestroyView() {
