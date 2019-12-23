@@ -1,14 +1,20 @@
 package com.codingwithmitch.openapi.ui.main.blog
 
+import android.app.SearchManager
+import android.content.Context.SEARCH_SERVICE
 import android.os.Bundle
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.EditorInfo.*
+import android.widget.EditText
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SearchView
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.RequestManager
 import com.codingwithmitch.openapi.R
 import com.codingwithmitch.openapi.models.BlogPost
@@ -21,11 +27,11 @@ import com.codingwithmitch.openapi.util.TopSpacingItemDecoration
 import kotlinx.android.synthetic.main.fragment_blog.*
 import javax.inject.Inject
 
-class BlogFragment : BaseBlogFragment(), BlogListAdapter.Interaction {
-
+class BlogFragment : BaseBlogFragment(), BlogListAdapter.Interaction, SwipeRefreshLayout.OnRefreshListener {
 
 
     private lateinit var recyclerAdapter: BlogListAdapter
+    private lateinit var searchView: SearchView
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -37,15 +43,67 @@ class BlogFragment : BaseBlogFragment(), BlogListAdapter.Interaction {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
+        //(activity as AppCompatActivity).supportActionBar?.setDisplayShowTitleEnabled(false)
+        setHasOptionsMenu(true)
+        swipe_refresh.setOnRefreshListener(this)
 
         initRecyclerView()
-
         subscribeObservers()
-
-        if(savedInstanceState == null){
+        if (savedInstanceState == null) {
             viewModel.loadFirstPage()
         }
+    }
+
+    private fun onBlogSearchOrFilter() {
+        viewModel.loadFirstPage().let {
+            resetUI()
+        }
+    }
+
+    private fun initSearchView(menu: Menu) {
+        activity?.apply {
+            val searchManager: SearchManager = getSystemService(SEARCH_SERVICE) as SearchManager
+            searchView = menu.findItem(R.id.action_search).actionView as SearchView
+            searchView.setSearchableInfo(searchManager.getSearchableInfo(componentName))
+            searchView.maxWidth = Integer.MAX_VALUE
+            searchView.setIconifiedByDefault(true)
+            searchView.isSubmitButtonEnabled = true
+        }
+
+        //case 1: ENTER ON COMPUTER KEYBOARD OR ARROW ON VIRTUAL KEYBOARD
+        val searchPlate = searchView.findViewById(R.id.search_src_text) as EditText
+        searchPlate.setOnEditorActionListener { v, actionId, event ->
+            if (actionId == IME_ACTION_UNSPECIFIED || actionId == IME_ACTION_SEARCH) {
+                val searchQuery = v.text.toString()
+                Log.e(TAG, "SearchView : (keyboard or arrow) executing search... $searchQuery")
+                viewModel.setQuery(searchQuery).let {
+                    onBlogSearchOrFilter()
+                }
+            }
+            true
+        }
+
+        //case 2: SEARCH BUTTON CLICKED (in toolbar)
+        (searchView.findViewById(R.id.search_go_btn) as View).setOnClickListener {
+            val searchQuery = searchPlate.text.toString()
+            Log.e(TAG, "SearchView : (button) executing search... $searchQuery")
+            viewModel.setQuery(searchQuery).let{
+                onBlogSearchOrFilter()
+            }
+        }
+
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+        inflater.inflate(R.menu.search_menu, menu)
+        initSearchView(menu)
+    }
+
+    private fun resetUI() {
+        blog_post_recyclerview.smoothScrollToPosition(0)
+        stateChangeListener.hideSoftKeyboard()
+        focusable_view.requestFocus()
     }
 
     private fun subscribeObservers() {
@@ -68,7 +126,7 @@ class BlogFragment : BaseBlogFragment(), BlogListAdapter.Interaction {
         })
         viewModel.viewState.observe(viewLifecycleOwner, Observer { viewState ->
             Log.d(TAG, "BlogFragment, ViewState : ${viewState}")
-            if(viewState!=null){
+            if (viewState != null) {
                 recyclerAdapter.submitList(
                     blogList = viewState.blogFields.blogList,
                     isQueryExhausted = viewState.blogFields.isQueryExhausted
@@ -77,11 +135,12 @@ class BlogFragment : BaseBlogFragment(), BlogListAdapter.Interaction {
         })
 
     }
-    private fun handlePagination(dataState: DataState<BlogViewState>){
+
+    private fun handlePagination(dataState: DataState<BlogViewState>) {
         //handle incoming data from DataState
-        dataState.data?.let{
-            it.data?.let{
-                it.getContentIfNotHandled()?.let{
+        dataState.data?.let {
+            it.data?.let {
+                it.getContentIfNotHandled()?.let {
                     viewModel.handleIncomingBlogListData(it)
                 }
             }
@@ -90,9 +149,9 @@ class BlogFragment : BaseBlogFragment(), BlogListAdapter.Interaction {
 
         //must do this b/c server will return ApiErrorResponse if page is not valid
         //meaning there is no more data
-        dataState.error?.let{event->
-            event.peekContent().response.message?.let{
-                if(ErrorHandling.isPaginationDone(it)){
+        dataState.error?.let { event ->
+            event.peekContent().response.message?.let {
+                if (ErrorHandling.isPaginationDone(it)) {
                     //handle the error message event so it doesn't play on ui
                     event.getContentIfNotHandled()
                     //set query exhausted to update recyclerview with no more results
@@ -138,5 +197,10 @@ class BlogFragment : BaseBlogFragment(), BlogListAdapter.Interaction {
         Log.d(TAG, "onItemSelected: position, BlogPost $position, $item")
         viewModel.setBlogPost(item)
         findNavController().navigate(R.id.action_blogFragment_to_viewBlogFragment)
+    }
+
+    override fun onRefresh() {
+        onBlogSearchOrFilter()
+        swipe_refresh.isRefreshing=false
     }
 }
