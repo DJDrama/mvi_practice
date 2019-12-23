@@ -35,3 +35,16 @@ fun BlogViewModel.getOrder(): String{
         return it.blogFields.order
     }
 }
+fun BlogViewModel.getSlug(): String{
+    getCurrrentViewStateOrNew().let{
+        it.viewBlogFields.blogPost?.let{blogPost->
+            return blogPost.slug
+        }
+    }
+    return ""
+}
+fun BlogViewModel.isAuthorOfBlogPost(): Boolean{
+    getCurrrentViewStateOrNew().let{
+        return it.viewBlogFields.isAuthorOfBlogPost
+    }
+}

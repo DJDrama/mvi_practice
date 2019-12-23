@@ -3,6 +3,7 @@ package com.codingwithmitch.openapi.repository.main
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.switchMap
+import com.codingwithmitch.openapi.api.GenericResponse
 import com.codingwithmitch.openapi.api.main.OpenApiMainService
 import com.codingwithmitch.openapi.api.main.responses.BlogListSearchResponse
 import com.codingwithmitch.openapi.api.main.responses.BlogSearchResponse
@@ -15,9 +16,12 @@ import com.codingwithmitch.openapi.repository.NetworkBoundResource
 import com.codingwithmitch.openapi.session.SessionManager
 import com.codingwithmitch.openapi.ui.DataState
 import com.codingwithmitch.openapi.ui.main.blog.state.BlogViewState
+import com.codingwithmitch.openapi.util.AbsentLiveData
 import com.codingwithmitch.openapi.util.Constants.Companion.PAGINATION_PAGE_SIZE
 import com.codingwithmitch.openapi.util.DateUtils
 import com.codingwithmitch.openapi.util.GenericApiResponse
+import com.codingwithmitch.openapi.util.SuccessHandling.Companion.RESPONSE_HAS_PERMISSION_TO_EDIT
+import com.codingwithmitch.openapi.util.SuccessHandling.Companion.RESPONSE_NO_PERMISSION_TO_EDIT
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.Dispatchers.Main
 import kotlinx.coroutines.Job
@@ -89,9 +93,9 @@ constructor(
 
             override fun loadFromCache(): LiveData<BlogViewState> {
                 return blogPostDao.returnOrderedBlogQuery(
-                    query=query,
+                    query = query,
                     filterAndOrder = filterAndOrder,
-                    page=page
+                    page = page
                 )
                     .switchMap {
                         object : LiveData<BlogViewState>() {
@@ -131,6 +135,58 @@ constructor(
 
             override fun setJob(job: Job) {
                 addJob("searchBlogPosts", job)
+            }
+
+        }.asLiveData()
+    }
+
+    fun isAuthorOfBlogPost(
+        authToken: AuthToken,
+        slug: String
+    ): LiveData<DataState<BlogViewState>> {
+        return object : NetworkBoundResource<GenericResponse, Any, BlogViewState>(
+            sessionManager.isConnectedToTheInternet(),
+            true,
+            true,
+            false
+        ) {
+            override suspend fun createCacheRequestAndReturn() {
+            }
+
+            override suspend fun handleApiSuccessResponse(response: GenericApiResponse.ApiSuccessResponse<GenericResponse>) {
+                withContext(Main) {
+                    Log.d(TAG, "handleApiSuccessResponse : ${response.body.response}")
+                    var isAuthor = false
+                    if (response.body.response == RESPONSE_HAS_PERMISSION_TO_EDIT) {
+                        isAuthor = true
+                    }
+                    onCompleteJob(
+                        DataState.data(
+                            data = BlogViewState(
+                                viewBlogFields = BlogViewState.ViewBlogFields(
+                                    isAuthorOfBlogPost = isAuthor
+                                )
+                            ),
+                            response = null
+                        )
+                    )
+                }
+            }
+
+            override fun createCall(): LiveData<GenericApiResponse<GenericResponse>> {
+                return openApiMainService.isAuthorOfBlogPost(authorization = "TOKEN ${authToken.token}", slug = slug)
+            }
+
+            override fun loadFromCache(): LiveData<BlogViewState> {
+                return AbsentLiveData.create()
+            }
+
+            override suspend fun updateLocalDb(cacheObject: Any?) {
+            }
+
+            override fun setJob(job: Job) {
+                addJob("isAuthorOfBlogPost", job)
+
             }
 
         }.asLiveData()
