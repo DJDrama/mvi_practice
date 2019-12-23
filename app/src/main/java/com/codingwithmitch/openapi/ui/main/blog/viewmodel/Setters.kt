@@ -43,3 +43,19 @@ fun BlogViewModel.setBlogListData(blogList: List<BlogPost>) {
     update.blogFields.blogList = blogList
     setViewState(update)
 }
+
+fun BlogViewModel.setBlogFilter(filter: String?) {
+    fun BlogViewModel.setQueryExhausted(isExhausted: Boolean) {
+        filter?.let {
+            val update = getCurrrentViewStateOrNew()
+            update.blogFields.filter = it
+            setViewState(update)
+        }
+    }
+}
+
+fun BlogViewModel.setBlogOrder(order: String) {
+    val update = getCurrrentViewStateOrNew()
+    update.blogFields.order = order
+    setViewState(update)
+}
