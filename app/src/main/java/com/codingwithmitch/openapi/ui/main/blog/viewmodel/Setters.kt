@@ -31,9 +31,6 @@ fun BlogViewModel.setIsQuthorOfBlogPost(isAuthorOfBlogPost: Boolean) {
 
 fun BlogViewModel.setQuery(query: String) {
     val update = getCurrrentViewStateOrNew()
-//        if(query.equals(update.blogFields.searchQuery)){
-//            return
-//        }
     update.blogFields.searchQuery = query
     setViewState(update)
 }
@@ -45,12 +42,10 @@ fun BlogViewModel.setBlogListData(blogList: List<BlogPost>) {
 }
 
 fun BlogViewModel.setBlogFilter(filter: String?) {
-    fun BlogViewModel.setQueryExhausted(isExhausted: Boolean) {
-        filter?.let {
-            val update = getCurrrentViewStateOrNew()
-            update.blogFields.filter = it
-            setViewState(update)
-        }
+    filter?.let {
+        val update = getCurrrentViewStateOrNew()
+        update.blogFields.filter = it
+        setViewState(update)
     }
 }
 
