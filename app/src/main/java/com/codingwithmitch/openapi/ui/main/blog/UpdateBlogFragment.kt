@@ -4,8 +4,11 @@ import android.net.Uri
 import android.os.Bundle
 import android.view.*
 import androidx.lifecycle.Observer
+import androidx.navigation.fragment.findNavController
 import com.codingwithmitch.openapi.R
 import com.codingwithmitch.openapi.ui.main.blog.state.BlogStateEvent
+import com.codingwithmitch.openapi.ui.main.blog.viewmodel.onBlogPostUpdateSuccess
+import com.codingwithmitch.openapi.ui.main.blog.viewmodel.setUpdatedBlogFields
 import kotlinx.android.synthetic.main.fragment_update_blog.*
 import okhttp3.MultipartBody
 
@@ -34,7 +37,9 @@ class UpdateBlogFragment : BaseBlogFragment() {
                 data.data?.getContentIfNotHandled()?.let { viewState ->
                     //if this is not null, blogpost was updated...
                     viewState.viewBlogFields.blogPost?.let { blogPost ->
-                        //TODO("onBlogPostUpdateSuccess")
+                        viewModel.onBlogPostUpdateSuccess(blogPost).let{
+                         findNavController().popBackStack()
+                        }
                     }
                 }
             }
@@ -83,6 +88,15 @@ class UpdateBlogFragment : BaseBlogFragment() {
                 blog_body.text.toString(),
                 multipartBody
             )
+        )
+    }
+
+    override fun onPause() { //saving for orientation
+        super.onPause()
+        viewModel.setUpdatedBlogFields(
+            uri = null,
+            title = blog_title.text.toString(),
+            body = blog_body.text.toString()
         )
     }
 }
