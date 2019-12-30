@@ -84,7 +84,7 @@ dependencies {
     implementation "androidx.room:room-ktx:$room_version"
 
     // Dagger
-    def dagger_version = "2.25.2"
+    def dagger_version = "2.25.4"
 
     // Dagger2 core
     implementation "com.google.dagger:dagger:$dagger_version"
