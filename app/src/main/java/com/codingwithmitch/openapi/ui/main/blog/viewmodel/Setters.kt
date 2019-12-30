@@ -11,11 +11,9 @@ fun BlogViewModel.setQueryExhausted(isExhausted: Boolean) {
 }
 
 fun BlogViewModel.setQueryInProgress(isInProgress: Boolean) {
-    fun BlogViewModel.setQueryExhausted(isExhausted: Boolean) {
-        val update = getCurrrentViewStateOrNew()
-        update.blogFields.isQueryInProgress = isInProgress
-        setViewState(update)
-    }
+    val update = getCurrrentViewStateOrNew()
+    update.blogFields.isQueryInProgress = isInProgress
+    setViewState(update)
 }
 
 fun BlogViewModel.setBlogPost(blogPost: BlogPost) {
@@ -56,11 +54,11 @@ fun BlogViewModel.setBlogOrder(order: String) {
     setViewState(update)
 }
 
-fun BlogViewModel.removeDeletedBlogPost(){
+fun BlogViewModel.removeDeletedBlogPost() {
     val update = getCurrrentViewStateOrNew()
     val list = update.blogFields.blogList.toMutableList()
-    for(i in 0 until list.size){
-        if(list[i] == getBlogPost()){
+    for (i in 0 until list.size) {
+        if (list[i] == getBlogPost()) {
             list.remove(getBlogPost())
             break
         }
@@ -72,27 +70,27 @@ fun BlogViewModel.setUpdatedBlogFields(
     title: String?,
     body: String?,
     uri: Uri?
-){
+) {
     val update = getCurrrentViewStateOrNew()
-    val updatedBlogFields = update.updateBlogFields
-    title?.let{
+    val updatedBlogFields = update.updatedBlogFields
+    title?.let {
         updatedBlogFields.updatedBlogTitle = it
     }
-    body?.let{
+    body?.let {
         updatedBlogFields.updatedBlogBody = it
     }
-    uri?.let{
+    uri?.let {
         updatedBlogFields.updatedImageUri = it
     }
-    update.updateBlogFields = updatedBlogFields
+    update.updatedBlogFields = updatedBlogFields
     setViewState(update)
 }
 
-fun BlogViewModel.updateListItem(newBlogPost: BlogPost){
+fun BlogViewModel.updateListItem(newBlogPost: BlogPost) {
     val update = getCurrrentViewStateOrNew()
     val list = update.blogFields.blogList.toMutableList()
-    for(i in 0 until list.size){
-        if(list[i].pk == newBlogPost.pk){
+    for (i in 0 until list.size) {
+        if (list[i].pk == newBlogPost.pk) {
             list[i] = newBlogPost
             break
         }
@@ -101,7 +99,7 @@ fun BlogViewModel.updateListItem(newBlogPost: BlogPost){
     setViewState(update)
 }
 
-fun BlogViewModel.onBlogPostUpdateSuccess(blogPost: BlogPost){
+fun BlogViewModel.onBlogPostUpdateSuccess(blogPost: BlogPost) {
     setUpdatedBlogFields(
         uri = null,
         title = blogPost.title,

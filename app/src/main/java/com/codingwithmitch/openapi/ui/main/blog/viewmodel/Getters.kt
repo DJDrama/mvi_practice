@@ -65,7 +65,7 @@ fun BlogViewModel.getDummyBlogPost(): BlogPost{
 
 fun BlogViewModel.getUpdatedBlogUri(): Uri? {
     getCurrrentViewStateOrNew().let{
-        it.updateBlogFields.updatedImageUri?.let{
+        it.updatedBlogFields.updatedImageUri?.let{
             return it
         }
     }

@@ -14,7 +14,7 @@ data class BlogViewState(
     var viewBlogFields: ViewBlogFields = ViewBlogFields(),
 
     //UpdateBlogFragment Vars
-    var updateBlogFields: UpdateBlogFields = UpdateBlogFields()
+    var updatedBlogFields: UpdateBlogFields = UpdateBlogFields()
 ) {
     data class BlogFields(
         var blogList: List<BlogPost> = ArrayList(),
