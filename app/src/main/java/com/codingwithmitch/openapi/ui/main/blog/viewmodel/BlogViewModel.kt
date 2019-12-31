@@ -28,46 +28,56 @@ constructor(
     val blogRepository: BlogRepository,
     val sharedPreferences: SharedPreferences,
     val editor: SharedPreferences.Editor
-): BaseViewModel<BlogStateEvent, BlogViewState>(){
-    init{
+) : BaseViewModel<BlogStateEvent, BlogViewState>() {
+    init {
         setBlogFilter(
             sharedPreferences.getString(BLOG_FILTER, BlogQueryUtils.BLOG_FILTER_DATE_UPDATED)
         )
         setBlogOrder(sharedPreferences.getString(BLOG_ORDER, BlogQueryUtils.BLOG_ORDER_ASC))
     }
+
     override fun initNewViewState(): BlogViewState {
         return BlogViewState()
     }
+
     override fun handleStateEvent(stateEvent: BlogStateEvent): LiveData<DataState<BlogViewState>> {
-        when(stateEvent){
-            is BlogSearchEvent->{
-                return sessionManager.cachedToken.value?.let{authToken ->
+        when (stateEvent) {
+            is BlogSearchEvent -> {
+                clearLayoutManagerState() //for removing restoring position
+                return sessionManager.cachedToken.value?.let { authToken ->
                     blogRepository.searchBlogPosts(
-                        authToken= authToken,
+                        authToken = authToken,
                         query = getSearchQuery(),
-                        filterAndOrder = getOrder()+getFilter(),
+                        filterAndOrder = getOrder() + getFilter(),
                         page = getPage()
                     )
-                }?:AbsentLiveData.create()
+                } ?: AbsentLiveData.create()
             }
-            is CheckAuthorOfBlogPost->{
-                return sessionManager.cachedToken.value?.let{authToken ->
+            is RestoreBlogListFromCache -> {
+                return blogRepository.restoreBlogListFromCache(
+                    query = getSearchQuery(),
+                    filterAndOrder = getOrder() + getFilter(),
+                    page = getPage()
+                )
+            }
+            is CheckAuthorOfBlogPost -> {
+                return sessionManager.cachedToken.value?.let { authToken ->
                     blogRepository.isAuthorOfBlogPost(
                         authToken = authToken,
                         slug = getSlug()
                     )
-                }?:AbsentLiveData.create()
+                } ?: AbsentLiveData.create()
             }
-            is DeleteBlogPostEvent ->{
-                return sessionManager.cachedToken.value?.let{authToken ->
+            is DeleteBlogPostEvent -> {
+                return sessionManager.cachedToken.value?.let { authToken ->
                     blogRepository.deleteBlogPost(
                         authToken = authToken,
-                       blogPost = getBlogPost()
+                        blogPost = getBlogPost()
                     )
-                }?:AbsentLiveData.create()
+                } ?: AbsentLiveData.create()
             }
-            is UpdatedBlogPostEvent ->{
-                return sessionManager.cachedToken.value?.let{authToken ->
+            is UpdatedBlogPostEvent -> {
+                return sessionManager.cachedToken.value?.let { authToken ->
                     val title = RequestBody.create(
                         MediaType.parse("text/plain"),
                         stateEvent.title
@@ -83,10 +93,10 @@ constructor(
                         body,
                         stateEvent.image
                     )
-                }?:AbsentLiveData.create()
+                } ?: AbsentLiveData.create()
             }
-            is None->{
-                return object: LiveData<DataState<BlogViewState>>(){
+            is None -> {
+                return object : LiveData<DataState<BlogViewState>>() {
                     override fun onActive() {
                         super.onActive()
                         value = DataState(
@@ -100,18 +110,20 @@ constructor(
         }
     }
 
-    fun saveFilterOptions(filter: String, order: String){
+    fun saveFilterOptions(filter: String, order: String) {
         editor.putString(BLOG_FILTER, filter)
         editor.apply()
 
         editor.putString(BLOG_ORDER, order)
         editor.apply()
     }
-    fun cancelActiveJobs(){
+
+    fun cancelActiveJobs() {
         blogRepository.cancelActiveJobs()
         handlePendingData()
     }
-    private fun handlePendingData(){
+
+    private fun handlePendingData() {
         setStateEvent(None())
     }
 
@@ -119,7 +131,6 @@ constructor(
         super.onCleared()
         cancelActiveJobs()
     }
-
 
 
 }

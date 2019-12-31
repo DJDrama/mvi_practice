@@ -11,6 +11,12 @@ fun BlogViewModel.resetPage(){
     setViewState(update)
 }
 
+fun BlogViewModel.refreshFromCache(){
+    setQueryInProgress(true)
+    setQueryExhausted(false)
+    setStateEvent(RestoreBlogListFromCache()) //not resetting page
+}
+
 fun BlogViewModel.loadFirstPage(){
     setQueryInProgress(true)
     setQueryExhausted(false)

@@ -1,6 +1,7 @@
 package com.codingwithmitch.openapi.ui.main.blog.viewmodel
 
 import android.net.Uri
+import android.os.Parcelable
 import com.codingwithmitch.openapi.models.BlogPost
 
 
@@ -107,4 +108,15 @@ fun BlogViewModel.onBlogPostUpdateSuccess(blogPost: BlogPost) {
     ) //update updateBlogFragment
     setBlogPost(blogPost) //update viewblogfragment
     updateListItem(blogPost) //update blogfragment
+}
+
+fun BlogViewModel.setLayoutManagerState(layoutManagerState: Parcelable){
+    val update = getCurrrentViewStateOrNew()
+    update.blogFields.layoutManagerState = layoutManagerState
+    setViewState(update)
+}
+fun BlogViewModel.clearLayoutManagerState(){
+    val update = getCurrrentViewStateOrNew()
+    update.blogFields.layoutManagerState = null
+    setViewState(update)
 }

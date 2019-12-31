@@ -35,7 +35,6 @@ abstract class BaseBlogFragment : Fragment(), Injectable {
     lateinit var uiCommunicationListener: UICommunicationListener
 
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         viewModel = activity?.run {
@@ -53,12 +52,18 @@ abstract class BaseBlogFragment : Fragment(), Injectable {
             }
         }
     }
+
     fun isViewModelInitialized() = ::viewModel.isInitialized
     override fun onSaveInstanceState(outState: Bundle) {
-        if(isViewModelInitialized()){
+        if (isViewModelInitialized()) {
+            val viewState = viewModel.viewState.value
+            viewState?.blogFields?.blogList = ArrayList()
+
+
             outState.putParcelable(
                 BLOG_VIEW_STATE_BUNDLE_KEY,
-                viewModel.viewState.value
+                //viewModel.viewState.value
+                viewState
             )
         }
         super.onSaveInstanceState(outState)

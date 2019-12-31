@@ -5,13 +5,12 @@ import android.content.Context.SEARCH_SERVICE
 import android.os.Bundle
 import android.util.Log
 import android.view.*
-import android.view.inputmethod.EditorInfo
-import android.view.inputmethod.EditorInfo.*
+import android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH
+import android.view.inputmethod.EditorInfo.IME_ACTION_UNSPECIFIED
 import android.widget.EditText
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
@@ -21,22 +20,20 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.customview.customView
 import com.afollestad.materialdialogs.customview.getCustomView
-import com.bumptech.glide.RequestManager
 import com.codingwithmitch.openapi.R
 import com.codingwithmitch.openapi.models.BlogPost
 import com.codingwithmitch.openapi.persistence.BlogQueryUtils.Companion.BLOG_FILTER_DATE_UPDATED
 import com.codingwithmitch.openapi.persistence.BlogQueryUtils.Companion.BLOG_FILTER_USERNAME
 import com.codingwithmitch.openapi.persistence.BlogQueryUtils.Companion.BLOG_ORDER_ASC
 import com.codingwithmitch.openapi.ui.DataState
-import com.codingwithmitch.openapi.ui.main.blog.state.BlogStateEvent
 import com.codingwithmitch.openapi.ui.main.blog.state.BlogViewState
 import com.codingwithmitch.openapi.ui.main.blog.viewmodel.*
 import com.codingwithmitch.openapi.util.ErrorHandling
 import com.codingwithmitch.openapi.util.TopSpacingItemDecoration
 import kotlinx.android.synthetic.main.fragment_blog.*
-import javax.inject.Inject
 
-class BlogFragment : BaseBlogFragment(), BlogListAdapter.Interaction, SwipeRefreshLayout.OnRefreshListener {
+class BlogFragment : BaseBlogFragment(), BlogListAdapter.Interaction,
+    SwipeRefreshLayout.OnRefreshListener {
 
 
     private lateinit var recyclerAdapter: BlogListAdapter
@@ -59,8 +56,24 @@ class BlogFragment : BaseBlogFragment(), BlogListAdapter.Interaction, SwipeRefre
 
         initRecyclerView()
         subscribeObservers()
-        if (savedInstanceState == null) {
-            viewModel.loadFirstPage()
+//        if (savedInstanceState == null) {
+//            viewModel.loadFirstPage()
+//        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        viewModel.refreshFromCache()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        saveLayoutManagerState()
+    }
+
+    private fun saveLayoutManagerState() {
+        blog_post_recyclerview.layoutManager?.onSaveInstanceState()?.let { lmState ->
+            viewModel.setLayoutManagerState(lmState)
         }
     }
 
@@ -97,7 +110,7 @@ class BlogFragment : BaseBlogFragment(), BlogListAdapter.Interaction, SwipeRefre
         (searchView.findViewById(R.id.search_go_btn) as View).setOnClickListener {
             val searchQuery = searchPlate.text.toString()
             Log.e(TAG, "SearchView : (button) executing search... $searchQuery")
-            viewModel.setQuery(searchQuery).let{
+            viewModel.setQuery(searchQuery).let {
                 onBlogSearchOrFilter()
             }
         }
@@ -109,9 +122,10 @@ class BlogFragment : BaseBlogFragment(), BlogListAdapter.Interaction, SwipeRefre
         inflater.inflate(R.menu.search_menu, menu)
         initSearchView(menu)
     }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when(item.itemId){
-            R.id.action_filter_settings->{
+        when (item.itemId) {
+            R.id.action_filter_settings -> {
                 showFilterOptions()
                 return true
             }
@@ -151,6 +165,7 @@ class BlogFragment : BaseBlogFragment(), BlogListAdapter.Interaction, SwipeRefre
                         dependencyProvider.getGlideRequestManager(),
                         viewState.blogFields.blogList
                     )
+                    Log.d(TAG, "#list items ${viewState.blogFields.blogList.size}")
                     submitList(
                         blogList = viewState.blogFields.blogList,
                         isQueryExhausted = viewState.blogFields.isQueryExhausted
@@ -196,7 +211,8 @@ class BlogFragment : BaseBlogFragment(), BlogListAdapter.Interaction, SwipeRefre
             removeItemDecoration(topSpacingItemDecoration)
             addItemDecoration(topSpacingItemDecoration)
 
-            recyclerAdapter = BlogListAdapter(dependencyProvider.getGlideRequestManager(), this@BlogFragment)
+            recyclerAdapter =
+                BlogListAdapter(dependencyProvider.getGlideRequestManager(), this@BlogFragment)
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                     super.onScrollStateChanged(recyclerView, newState)
@@ -225,15 +241,20 @@ class BlogFragment : BaseBlogFragment(), BlogListAdapter.Interaction, SwipeRefre
         findNavController().navigate(R.id.action_blogFragment_to_viewBlogFragment)
     }
 
+
+    override fun resotreListPosition() {
+        viewModel.viewState.value?.blogFields?.layoutManagerState?.let { lmState ->
+            blog_post_recyclerview?.layoutManager?.onRestoreInstanceState(lmState)
+        }
+    }
+
     override fun onRefresh() {
         onBlogSearchOrFilter()
-        swipe_refresh.isRefreshing=false
+        swipe_refresh.isRefreshing = false
     }
 
 
-
-
-    private fun showFilterOptions(){
+    private fun showFilterOptions() {
         //0. show dialog
         activity?.let {
             val dialog = MaterialDialog(it)
@@ -243,16 +264,16 @@ class BlogFragment : BaseBlogFragment(), BlogListAdapter.Interaction, SwipeRefre
             val view = dialog.getCustomView()
             //1. step1: highlight the previous filter options
             val filter = viewModel.getFilter()
-            if(filter == BLOG_FILTER_DATE_UPDATED){
+            if (filter == BLOG_FILTER_DATE_UPDATED) {
                 view.findViewById<RadioGroup>(R.id.filter_group).check(R.id.filter_date)
-            }else {
+            } else {
                 view.findViewById<RadioGroup>(R.id.filter_group).check(R.id.filter_author)
             }
 
             val order = viewModel.getOrder()
-            if(order == BLOG_ORDER_ASC){
+            if (order == BLOG_ORDER_ASC) {
                 view.findViewById<RadioGroup>(R.id.order_group).check(R.id.filter_asc)
-            }else {
+            } else {
                 view.findViewById<RadioGroup>(R.id.order_group).check(R.id.filter_desc)
             }
 
@@ -266,18 +287,18 @@ class BlogFragment : BaseBlogFragment(), BlogListAdapter.Interaction, SwipeRefre
                     dialog.getCustomView().findViewById<RadioGroup>(R.id.order_group).checkedRadioButtonId
                 )
                 var filter = BLOG_FILTER_DATE_UPDATED
-                if(selectedFilter.text.toString() == getString(R.string.filter_author)){
+                if (selectedFilter.text.toString() == getString(R.string.filter_author)) {
                     filter = BLOG_FILTER_USERNAME
                 }
 
                 var order = ""
-                if(selectedOrder.text.toString() == getString(R.string.filter_desc)){
+                if (selectedOrder.text.toString() == getString(R.string.filter_desc)) {
                     order = "-"
                 }
 
                 //3. set the filter and order in the viewmodel
                 //4. save to shared preferences
-                viewModel.saveFilterOptions(filter, order).let{
+                viewModel.saveFilterOptions(filter, order).let {
                     viewModel.setBlogFilter(filter)
                     viewModel.setBlogOrder(order)
 
@@ -285,7 +306,7 @@ class BlogFragment : BaseBlogFragment(), BlogListAdapter.Interaction, SwipeRefre
                 }
                 dialog.dismiss()
             }
-            view.findViewById<TextView>(R.id.negative_button).setOnClickListener{
+            view.findViewById<TextView>(R.id.negative_button).setOnClickListener {
                 Log.d(TAG, "FilterDialog : cancelling filter.")
                 dialog.dismiss()
             }
