@@ -54,19 +54,20 @@ class CreateBlogFragment : BaseCreateBlogFragment() {
 
     private fun subscribeObservers() {
         viewModel.dataState.observe(viewLifecycleOwner, Observer { dataState ->
-            stateChangeListener.onDataStateChange(dataState)
-
-            dataState.data?.let { data ->
-                data.response?.let { event ->
-                    event.peekContent().let { response ->
-                        response.message?.let { message ->
-                            if(message == SUCCESS_BLOG_CREATED){
-                                viewModel.clearNewBlogFields()
+            if (dataState != null) {
+                /** should check null due to process death **/
+                stateChangeListener.onDataStateChange(dataState)
+                dataState.data?.let { data ->
+                    data.response?.let { event ->
+                        event.peekContent().let { response ->
+                            response.message?.let { message ->
+                                if (message == SUCCESS_BLOG_CREATED) {
+                                    viewModel.clearNewBlogFields()
+                                }
                             }
                         }
                     }
                 }
-
             }
         })
         viewModel.viewState.observe(viewLifecycleOwner, Observer { viewState ->
@@ -82,14 +83,14 @@ class CreateBlogFragment : BaseCreateBlogFragment() {
 
     private fun setBlogProperties(title: String?, body: String?, image: Uri?) {
         image?.let { uri ->
-            requestManager.load(uri).into(blog_image)
+            dependencyProvider.getGlideRequestManager().load(uri).into(blog_image)
         } ?: setDefaultImage()
         blog_title.setText(title)
         blog_body.setText(body)
     }
 
     private fun setDefaultImage() {
-        requestManager.load(R.drawable.default_image)
+        dependencyProvider.getGlideRequestManager().load(R.drawable.default_image)
             .into(blog_image)
     }
 
@@ -193,7 +194,7 @@ class CreateBlogFragment : BaseCreateBlogFragment() {
         viewModel.getNewImageUri()?.let { imageUri ->
             imageUri.path?.let { filePath ->
                 val imageFile = File(filePath)
-                Log.d(TAG, "CreateBlogFragment : imageFile : ${imageFile}")
+                Log.d(TAG, "CreateBlogFragment : imageFile : $imageFile")
                 val requestBody = RequestBody.create(
                     MediaType.parse("image/*"),
                     imageFile

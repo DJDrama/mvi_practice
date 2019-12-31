@@ -46,7 +46,7 @@ class UpdateBlogFragment : BaseBlogFragment() {
 
         subscribeObservers()
         image_container.setOnClickListener {
-            if(stateChangeListener.isStoragePermissionGranted()){
+            if (stateChangeListener.isStoragePermissionGranted()) {
                 pickFromGallery()
             }
         }
@@ -54,13 +54,16 @@ class UpdateBlogFragment : BaseBlogFragment() {
 
     private fun subscribeObservers() {
         viewModel.dataState.observe(viewLifecycleOwner, Observer { dataState ->
-            stateChangeListener.onDataStateChange(dataState)
-            dataState.data?.let { data ->
-                data.data?.getContentIfNotHandled()?.let { viewState ->
-                    //if this is not null, blogpost was updated...
-                    viewState.viewBlogFields.blogPost?.let { blogPost ->
-                        viewModel.onBlogPostUpdateSuccess(blogPost).let {
-                            findNavController().popBackStack()
+            if (dataState != null) {
+                /** should check null due to process death **/
+                stateChangeListener.onDataStateChange(dataState)
+                dataState.data?.let { data ->
+                    data.data?.getContentIfNotHandled()?.let { viewState ->
+                        //if this is not null, blogpost was updated...
+                        viewState.viewBlogFields.blogPost?.let { blogPost ->
+                            viewModel.onBlogPostUpdateSuccess(blogPost).let {
+                                findNavController().popBackStack()
+                            }
                         }
                     }
                 }
@@ -83,7 +86,7 @@ class UpdateBlogFragment : BaseBlogFragment() {
         updatedBlogBody: String?,
         updatedImageUri: Uri?
     ) {
-        requestManager.load(updatedImageUri).into(blog_image)
+        dependencyProvider.getGlideRequestManager().load(updatedImageUri).into(blog_image)
         blog_title.setText(updatedBlogTitle)
         blog_body.setText(updatedBlogBody)
     }
@@ -101,6 +104,7 @@ class UpdateBlogFragment : BaseBlogFragment() {
         }
         return super.onOptionsItemSelected(item)
     }
+
     private fun pickFromGallery() {
         val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
         intent.type = "image/*"
@@ -109,6 +113,7 @@ class UpdateBlogFragment : BaseBlogFragment() {
         intent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
         startActivityForResult(intent, Constants.GALLERY_REQUEST_CODE)
     }
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode == Activity.RESULT_OK) {
@@ -135,6 +140,7 @@ class UpdateBlogFragment : BaseBlogFragment() {
             }
         }
     }
+
     private fun launchImageCrop(uri: Uri?) {
         context?.let {
             CropImage.activity(uri).setGuidelines(CropImageView.Guidelines.ON).start(it, this)

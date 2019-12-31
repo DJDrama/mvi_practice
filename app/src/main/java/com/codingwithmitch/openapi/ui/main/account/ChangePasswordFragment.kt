@@ -39,14 +39,17 @@ class ChangePasswordFragment : BaseAccountFragment() {
 
     private fun subscribeObservers() {
         viewModel.dataState.observe(viewLifecycleOwner, Observer { dataState ->
-            stateChangeListener.onDataStateChange(dataState)
-            Log.d(TAG, "ChangePasswordFragment, DataState: ${dataState}")
             if (dataState != null) {
-                dataState.data?.let { data ->
-                    data.response?.let { event ->
-                        if (event.peekContent().message.equals(RESPONSE_PASSWORD_UPDATE_SUCCESS)) {
-                            stateChangeListener.hideSoftKeyboard()
-                            findNavController().popBackStack()
+                /** should check null due to process death **/
+                stateChangeListener.onDataStateChange(dataState)
+                Log.d(TAG, "ChangePasswordFragment, DataState: ${dataState}")
+                if (dataState != null) {
+                    dataState.data?.let { data ->
+                        data.response?.let { event ->
+                            if (event.peekContent().message.equals(RESPONSE_PASSWORD_UPDATE_SUCCESS)) {
+                                stateChangeListener.hideSoftKeyboard()
+                                findNavController().popBackStack()
+                            }
                         }
                     }
                 }

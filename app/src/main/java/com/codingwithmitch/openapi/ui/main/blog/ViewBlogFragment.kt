@@ -18,7 +18,7 @@ import com.codingwithmitch.openapi.util.DateUtils
 import com.codingwithmitch.openapi.util.SuccessHandling.Companion.SUCCESS_BLOG_DELETED
 import kotlinx.android.synthetic.main.fragment_view_blog.*
 
-class ViewBlogFragment : BaseBlogFragment(){
+class ViewBlogFragment : BaseBlogFragment() {
 
 
     override fun onCreateView(
@@ -34,13 +34,14 @@ class ViewBlogFragment : BaseBlogFragment(){
         setHasOptionsMenu(true)
         checkIsAuthorOfBlogPost()
         stateChangeListener.expandAppbar()
-        delete_button.setOnClickListener{
+        delete_button.setOnClickListener {
             confirmDeleteRequest()
         }
         subscribeObservers()
     }
-    private fun confirmDeleteRequest(){
-        val callback: AreYouSureCallback = object: AreYouSureCallback{
+
+    private fun confirmDeleteRequest() {
+        val callback: AreYouSureCallback = object : AreYouSureCallback {
             override fun proceed() {
                 deleteBlogPost()
             }
@@ -50,59 +51,69 @@ class ViewBlogFragment : BaseBlogFragment(){
             }
         }
         uiCommunicationListener.onUIMessageReceived(
-            UIMessage(getString(R.string.are_you_sure_delete), UIMessageType.AreYouSureDialog(callback))
+            UIMessage(
+                getString(R.string.are_you_sure_delete),
+                UIMessageType.AreYouSureDialog(callback)
+            )
         )
     }
-    private fun deleteBlogPost(){
+
+    private fun deleteBlogPost() {
         viewModel.setStateEvent(
             DeleteBlogPostEvent()
         )
     }
-    private fun checkIsAuthorOfBlogPost(){
+
+    private fun checkIsAuthorOfBlogPost() {
         viewModel.setIsQuthorOfBlogPost(false)
         viewModel.setStateEvent(CheckAuthorOfBlogPost())
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
-        if(viewModel.isAuthorOfBlogPost()){
+        if (viewModel.isAuthorOfBlogPost()) {
             inflater.inflate(R.menu.edit_view_menu, menu)
         }
     }
 
-    private fun subscribeObservers(){
-        viewModel.dataState.observe(viewLifecycleOwner, Observer {dataState->
-            stateChangeListener.onDataStateChange(dataState)
-            dataState.data?.let{data->
-                data.data?.getContentIfNotHandled()?.let{viewState->
-                    viewModel.setIsQuthorOfBlogPost(
-                        viewState.viewBlogFields.isAuthorOfBlogPost
-                    )
-                }
-                data.response?.peekContent()?.let{response->
-                    if(response.message == SUCCESS_BLOG_DELETED){
-                        viewModel.removeDeletedBlogPost()
-                        findNavController().popBackStack()
+    private fun subscribeObservers() {
+        viewModel.dataState.observe(viewLifecycleOwner, Observer { dataState ->
+            if (dataState != null) {
+                /** should check null due to process death **/
+                stateChangeListener.onDataStateChange(dataState)
+                dataState.data?.let { data ->
+                    data.data?.getContentIfNotHandled()?.let { viewState ->
+                        viewModel.setIsQuthorOfBlogPost(
+                            viewState.viewBlogFields.isAuthorOfBlogPost
+                        )
+                    }
+                    data.response?.peekContent()?.let { response ->
+                        if (response.message == SUCCESS_BLOG_DELETED) {
+                            viewModel.removeDeletedBlogPost()
+                            findNavController().popBackStack()
+                        }
                     }
                 }
             }
         })
-        viewModel.viewState.observe(viewLifecycleOwner, Observer {viewState->
-            viewState.viewBlogFields.blogPost?.let{blogPost->
+        viewModel.viewState.observe(viewLifecycleOwner, Observer { viewState ->
+            viewState.viewBlogFields.blogPost?.let { blogPost ->
                 setBlogProperties(blogPost)
             }
-            if(viewState.viewBlogFields.isAuthorOfBlogPost){
+            if (viewState.viewBlogFields.isAuthorOfBlogPost) {
                 adapterViewToAuthorMode()
             }
 
         })
     }
-    private fun adapterViewToAuthorMode(){
+
+    private fun adapterViewToAuthorMode() {
         activity?.invalidateOptionsMenu() //refresh menu
         delete_button.visibility = View.VISIBLE
     }
-    private fun setBlogProperties(blogPost: BlogPost){
-        requestManager
+
+    private fun setBlogProperties(blogPost: BlogPost) {
+        dependencyProvider.getGlideRequestManager()
             .load(blogPost.image)
             .into(blog_image)
         blog_title.text = blogPost.title
@@ -114,9 +125,9 @@ class ViewBlogFragment : BaseBlogFragment(){
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if(viewModel.isAuthorOfBlogPost()){
-            when(item.itemId){
-                R.id.edit->{
+        if (viewModel.isAuthorOfBlogPost()) {
+            when (item.itemId) {
+                R.id.edit -> {
                     navUpdateBlogFragment()
                     return true
                 }
@@ -125,8 +136,8 @@ class ViewBlogFragment : BaseBlogFragment(){
         return super.onOptionsItemSelected(item)
     }
 
-    fun navUpdateBlogFragment(){
-        try{
+    fun navUpdateBlogFragment() {
+        try {
             //prepare for next fragment
             viewModel.setUpdatedBlogFields(
                 viewModel.getBlogPost().title,
@@ -134,7 +145,7 @@ class ViewBlogFragment : BaseBlogFragment(){
                 viewModel.getBlogPost().image.toUri()
             )
             findNavController().navigate(R.id.action_viewBlogFragment_to_updateBlogFragment)
-        }catch(e: Exception){
+        } catch (e: Exception) {
             Log.e(TAG, "Exception: ${e.message}")
         }
     }
