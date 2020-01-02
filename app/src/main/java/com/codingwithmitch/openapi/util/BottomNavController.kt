@@ -3,6 +3,7 @@ package com.codingwithmitch.openapi.util
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import android.os.Parcelable
 import androidx.annotation.IdRes
 import androidx.annotation.NavigationRes
 import androidx.fragment.app.Fragment
@@ -14,6 +15,7 @@ import androidx.navigation.fragment.NavHostFragment
 import com.codingwithmitch.openapi.R
 import com.codingwithmitch.openapi.util.BottomNavController.*
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import kotlinx.android.parcel.Parcelize
 
 /**
  * Class credit: Allan Veloso
@@ -21,6 +23,8 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
  * https://stackoverflow.com/questions/50577356/android-jetpack-navigation-bottomnavigationview-with-youtube-or-instagram-like#_=_
  * @property navigationBackStack: Backstack for the bottom navigation
  */
+
+const val BOTTOM_NAV_BACKSTACK_KEY="com.codingwithmitch.openapi.util.BottomNavController.BackStack"
 class BottomNavController(
     val context: Context,
     @IdRes val containerId: Int,
@@ -29,7 +33,7 @@ class BottomNavController(
     val navGraphProvider: NavGraphProvider
 ) {
     private val TAG: String = "AppDebug"
-    private val navigationBackStack = BackStack.of(appStartDestinationId)
+    lateinit var navigationBackStack : BackStack
 
     lateinit var activity: Activity
     lateinit var fragmentManager: FragmentManager
@@ -43,6 +47,11 @@ class BottomNavController(
         }
     }
 
+    fun setupBottomNavigationBackStack(previousBackStack: BackStack?){
+        navigationBackStack = previousBackStack?.let{
+            it
+        }?: BackStack.of(appStartDestinationId)
+    }
     fun onNavigationItemSelected(itemId: Int = navigationBackStack.last()): Boolean {
 
         // Replace fragment representing a navigation item
@@ -104,7 +113,8 @@ class BottomNavController(
         }
     }
 
-    private class BackStack : ArrayList<Int>() {
+    @Parcelize
+    class BackStack : ArrayList<Int>(), Parcelable {
         companion object {
             fun of(vararg elements: Int): BackStack {
                 val b = BackStack()
