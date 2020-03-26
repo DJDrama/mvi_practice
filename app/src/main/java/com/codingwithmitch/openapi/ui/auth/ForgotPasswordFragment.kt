@@ -2,27 +2,28 @@ package com.codingwithmitch.openapi.ui.auth
 
 
 import android.os.Bundle
-import android.util.Log
 import androidx.fragment.app.Fragment
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.ViewModelProvider
 import com.codingwithmitch.openapi.R
+import com.codingwithmitch.openapi.di.auth.AuthScope
+import javax.inject.Inject
 
 
-class ForgotPasswordFragment : BaseAuthFragment() {
+@AuthScope
+class ForgotPasswordFragment
+@Inject
+constructor(
+    private val viewModelFactory: ViewModelProvider.Factory
+) : Fragment(R.layout.fragment_forgot_password) {
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_forgot_password, container, false)
+    val viewModel: AuthViewModel by viewModels {
+        viewModelFactory
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        Log.d(TAG, "ForgotPasswordFragment: ${viewModel}")
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        viewModel.cancelActiveJobs()
     }
+
 }

@@ -1,35 +1,54 @@
 package com.codingwithmitch.openapi
 
-import android.app.Activity
 import android.app.Application
-import com.codingwithmitch.openapi.di.AppInjector
+import com.codingwithmitch.openapi.di.AppComponent
 import com.codingwithmitch.openapi.di.DaggerAppComponent
-import dagger.android.AndroidInjector
-import dagger.android.DispatchingAndroidInjector
-import dagger.android.HasAndroidInjector
-import dagger.android.support.DaggerApplication
-import javax.inject.Inject
+import com.codingwithmitch.openapi.di.auth.AuthComponent
+import com.codingwithmitch.openapi.di.main.MainComponent
 
-class BaseApplication: Application(), HasAndroidInjector{
+class BaseApplication : Application() {
+    lateinit var appComponent: AppComponent
 
-    @Inject
-    lateinit var dispatchingAndroidInjector: DispatchingAndroidInjector<Any>
+    private var authComponent: AuthComponent? = null
+
+    private var mainComponent: MainComponent? = null
+
 
     override fun onCreate() {
         super.onCreate()
-        AppInjector.init(this)
+        initAppComponent()
     }
 
-    override fun androidInjector(): AndroidInjector<Any> {
-        return dispatchingAndroidInjector
+    private fun initAppComponent() {
+        appComponent = DaggerAppComponent.builder()
+            .application(this)
+            .build()
     }
 
-//    override fun applicationInjector(): AndroidInjector<out DaggerApplication> {
-//       // return DaggerAppComponent.builder().application(this).build()
-//
-//    }
+
+    fun authComponent(): AuthComponent {
+        if (authComponent == null) {
+            authComponent = appComponent.authComponent().create()
+        }
+        return authComponent as AuthComponent
+    }
+
+    fun releaseAuthComponent() {
+        authComponent = null
+    }
 
 
+
+    fun mainComponent(): MainComponent {
+        if (mainComponent == null) {
+            mainComponent = appComponent.mainComponent().create()
+        }
+        return mainComponent as MainComponent
+    }
+
+    fun releaseMainComponent() {
+        mainComponent = null
+    }
 
 
 }
