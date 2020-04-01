@@ -8,6 +8,8 @@ import android.view.View
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentFactory
 import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavController
 import com.bumptech.glide.RequestManager
 import com.codingwithmitch.openapi.BaseApplication
@@ -19,24 +21,27 @@ import com.codingwithmitch.openapi.ui.auth.AuthActivity
 import com.codingwithmitch.openapi.ui.main.account.BaseAccountFragment
 import com.codingwithmitch.openapi.ui.main.account.ChangePasswordFragment
 import com.codingwithmitch.openapi.ui.main.account.UpdateAccountFragment
-import com.codingwithmitch.openapi.ui.main.blog.BaseBlogFragment
-import com.codingwithmitch.openapi.ui.main.blog.UpdateBlogFragment
-import com.codingwithmitch.openapi.ui.main.blog.ViewBlogFragment
+import com.codingwithmitch.openapi.ui.main.blog.*
 import com.codingwithmitch.openapi.ui.main.create_blog.BaseCreateBlogFragment
 import com.codingwithmitch.openapi.util.BOTTOM_NAV_BACKSTACK_KEY
 import com.codingwithmitch.openapi.util.BottomNavController
 import com.codingwithmitch.openapi.util.BottomNavController.*
 import com.codingwithmitch.openapi.util.setUpNavigation
-import com.codingwithmitch.openapi.viewmodels.AuthViewModelFactory
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.android.synthetic.main.activity_main.progress_bar
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import javax.inject.Inject
 import javax.inject.Named
 
+@ExperimentalCoroutinesApi
+@FlowPreview
 class MainActivity : BaseActivity(),
     OnNavigationGraphChanged,
-    OnNavigationReselectedListener {
+    OnNavigationReselectedListener
+{
 
     @Inject
     @Named("AccountFragmentFactory")
@@ -51,17 +56,59 @@ class MainActivity : BaseActivity(),
     lateinit var createBlogFragmentFactory: FragmentFactory
 
     private lateinit var bottomNavigationView: BottomNavigationView
+
     private val bottomNavController by lazy(LazyThreadSafetyMode.NONE) {
         BottomNavController(
             this,
-            R.id.main_nav_host_fragment,
-            R.id.nav_blog, //start Destination
-            this
-        )
+            R.id.main_fragments_container,
+            R.id.nav_blog,
+            this)
+    }
+
+    override fun onGraphChange() {
+        expandAppBar()
+    }
+
+    override fun onReselectNavItem(
+        navController: NavController,
+        fragment: Fragment
+    ){
+        Log.d(TAG, "logInfo: onReSelectItem")
+        when(fragment){
+
+            is ViewBlogFragment -> {
+                navController.navigate(R.id.action_viewBlogFragment_to_home)
+            }
+
+            is UpdateBlogFragment -> {
+                navController.navigate(R.id.action_updateBlogFragment_to_home)
+            }
+
+            is UpdateAccountFragment -> {
+                navController.navigate(R.id.action_updateAccountFragment_to_home)
+            }
+
+            is ChangePasswordFragment -> {
+                navController.navigate(R.id.action_changePasswordFragment_to_home)
+            }
+
+            else -> {
+                // do nothing
+            }
+        }
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+
+        when(item?.itemId){
+            android.R.id.home -> onBackPressed()
+        }
+        return super.onOptionsItemSelected(item)
     }
 
     override fun inject() {
-        (application as BaseApplication).mainComponent().inject(this)
+        (application as BaseApplication).mainComponent()
+            .inject(this)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -76,123 +123,73 @@ class MainActivity : BaseActivity(),
         restoreSession(savedInstanceState)
     }
 
-    private fun setupBottomNavigationView(savedInstanceState: Bundle?) {
+    private fun setupBottomNavigationView(savedInstanceState: Bundle?){
         bottomNavigationView = findViewById(R.id.bottom_navigation_view)
         bottomNavigationView.setUpNavigation(bottomNavController, this)
         if (savedInstanceState == null) {
             bottomNavController.setupBottomNavigationBackStack(null)
             bottomNavController.onNavigationItemSelected()
-        } else {
+        }
+        else{
             (savedInstanceState[BOTTOM_NAV_BACKSTACK_KEY] as IntArray?)?.let { items ->
-                val backStack = BackStack()
-                backStack.addAll(items.toTypedArray())
-                bottomNavController.setupBottomNavigationBackStack(backStack)
-
+                val backstack = BackStack()
+                backstack.addAll(items.toTypedArray())
+                bottomNavController.setupBottomNavigationBackStack(backstack)
             }
+        }
+    }
+
+    private fun restoreSession(savedInstanceState: Bundle?){
+        savedInstanceState?.get(AUTH_TOKEN_BUNDLE_KEY)?.let{ authToken ->
+            sessionManager.setValue(authToken as AuthToken)
         }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
-        outState.putParcelable(AUTH_TOKEN_BUNDLE_KEY, sessionManager.cachedToken.value)
-        outState.putIntArray(
-            BOTTOM_NAV_BACKSTACK_KEY,
-            bottomNavController.navigationBackStack.toIntArray()
-        )
         super.onSaveInstanceState(outState)
+
+        // save auth token
+        outState.putParcelable(AUTH_TOKEN_BUNDLE_KEY, sessionManager.cachedToken.value)
+
+        // save backstack for bottom nav
+        outState.putIntArray(BOTTOM_NAV_BACKSTACK_KEY, bottomNavController.navigationBackStack.toIntArray())
     }
 
-    private fun restoreSession(savedInstanceState: Bundle?) {
-        savedInstanceState?.let { inState ->
-            inState[AUTH_TOKEN_BUNDLE_KEY]?.let { authToken ->
-                sessionManager.setValue(authToken as AuthToken)
-            }
-        }
-    }
+    fun subscribeObservers(){
 
-    fun subscribeObservers() {
-        sessionManager.cachedToken.observe(this, Observer { authToken ->
-            Log.d(TAG, "MainActivity: subsribeOBservers: AuthToken : ${authToken}")
-            if (authToken == null || authToken.account_pk == -1 || authToken.token == null) {
+        sessionManager.cachedToken.observe(this, Observer{ authToken ->
+            Log.d(TAG, "MainActivity, subscribeObservers: ViewState: ${authToken}")
+            if(authToken == null || authToken.account_pk == -1 || authToken.token == null){
                 navAuthActivity()
+                finish()
             }
         })
     }
 
-    private fun navAuthActivity() {
+    override fun expandAppBar() {
+        findViewById<AppBarLayout>(R.id.app_bar).setExpanded(true)
+    }
+
+    override fun onBackPressed() = bottomNavController.onBackPressed()
+
+    private fun setupActionBar(){
+        setSupportActionBar(tool_bar)
+    }
+
+    private fun navAuthActivity(){
         val intent = Intent(this, AuthActivity::class.java)
         startActivity(intent)
         finish()
         (application as BaseApplication).releaseMainComponent()
     }
 
-    override fun displayProgressBar(bool: Boolean) {
-        if (bool) {
+    override fun displayProgressBar(bool: Boolean){
+        if(bool){
             progress_bar.visibility = View.VISIBLE
-        } else {
+        }
+        else{
             progress_bar.visibility = View.GONE
         }
-    }
-
-
-
-    override fun onGraphChange() {
-        //What needs to happen when the graph changes? ex) canceling active jobs
-        expandAppbar()
-        cancelActiveJobs()
-    }
-
-    private fun cancelActiveJobs() {
-        val fragments = bottomNavController.fragmentManager
-            .findFragmentById(bottomNavController.containerId)
-            ?.childFragmentManager
-            ?.fragments
-        if (fragments != null) {
-            for (fragment in fragments) {
-                when (fragment) {
-                    is BaseAccountFragment -> fragment.cancelActiveJobs()
-                    is BaseBlogFragment -> fragment.cancelActiveJobs()
-                    is BaseCreateBlogFragment -> fragment.cancelActiveJobs()
-                }
-            }
-        }
-    }
-
-    override fun onReselectNavItem(navController: NavController, fragment: Fragment) =
-        when (fragment) {
-            is ViewBlogFragment -> {
-                navController.navigate(R.id.action_viewBlogFragment_to_blogFragment)
-            }
-            is UpdateBlogFragment -> {
-                navController.navigate(R.id.action_updateBlogFragment_to_blogFragment)
-            }
-            is UpdateAccountFragment -> {
-                navController.navigate(R.id.action_updateAccountFragment_to_accountFragment)
-            }
-            is ChangePasswordFragment -> {
-                navController.navigate(R.id.action_changePasswordFragment_to_accountFragment)
-            }
-            else -> {
-                //do nothing
-            }
-        }
-
-    override fun onBackPressed() = bottomNavController.onBackPressed()
-
-    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
-        when (item?.itemId) {
-            android.R.id.home -> {
-                onBackPressed()
-            }
-        }
-        return super.onOptionsItemSelected(item)
-    }
-
-    private fun setupActionBar() {
-        setSupportActionBar(tool_bar)
-    }
-
-    override fun expandAppbar() {
-        findViewById<AppBarLayout>(R.id.app_bar).setExpanded(true)
     }
 
 

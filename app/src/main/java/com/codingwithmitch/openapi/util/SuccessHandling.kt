@@ -1,5 +1,4 @@
 package com.codingwithmitch.openapi.util
-
 class SuccessHandling {
 
     companion object{
@@ -11,6 +10,9 @@ class SuccessHandling {
         const val RESPONSE_HAS_PERMISSION_TO_EDIT = "You have permission to edit that."
         const val SUCCESS_BLOG_CREATED = "created"
         const val SUCCESS_BLOG_DELETED = "deleted"
+        const val SUCCESS_BLOG_UPDATED = "updated"
+
+
 
     }
 }

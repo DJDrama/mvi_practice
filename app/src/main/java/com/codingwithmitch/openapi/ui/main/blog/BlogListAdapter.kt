@@ -16,7 +16,7 @@ import kotlinx.android.synthetic.main.layout_blog_list_item.view.*
 class BlogListAdapter(
     private val requestManager: RequestManager,
     private val interaction: Interaction? = null
-    ) :
+) :
     RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private val TAG: String = "AppDebug"
@@ -49,6 +49,7 @@ class BlogListAdapter(
             AsyncDifferConfig.Builder(DIFF_CALLBACK).build()
         )
 
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
 
         when(viewType){
@@ -66,15 +67,22 @@ class BlogListAdapter(
 
             BLOG_ITEM ->{
                 return BlogViewHolder(
-                    LayoutInflater.from(parent.context)
-                        .inflate(R.layout.layout_blog_list_item, parent, false),
+                    LayoutInflater.from(parent.context).inflate(
+                        R.layout.layout_blog_list_item,
+                        parent,
+                        false
+                    ),
                     interaction = interaction,
                     requestManager = requestManager
                 )
             }
             else -> {
                 return BlogViewHolder(
-                    LayoutInflater.from(parent.context).inflate(R.layout.layout_blog_list_item, parent, false),
+                    LayoutInflater.from(parent.context).inflate(
+                        R.layout.layout_blog_list_item,
+                        parent,
+                        false
+                    ),
                     interaction = interaction,
                     requestManager = requestManager
                 )
@@ -90,12 +98,12 @@ class BlogListAdapter(
             adapter.notifyItemRangeChanged(position, count, payload)
         }
 
-        override fun onMoved(fromPosition: Int, toPosition: Int) {
-            adapter.notifyDataSetChanged()
-        }
-
         override fun onInserted(position: Int, count: Int) {
             adapter.notifyItemRangeChanged(position, count)
+        }
+
+        override fun onMoved(fromPosition: Int, toPosition: Int) {
+            adapter.notifyDataSetChanged()
         }
 
         override fun onRemoved(position: Int, count: Int) {
@@ -111,21 +119,19 @@ class BlogListAdapter(
         }
     }
 
+    override fun getItemViewType(position: Int): Int {
+        if(differ.currentList.get(position).pk > -1){
+            return BLOG_ITEM
+        }
+        return differ.currentList.get(position).pk
+    }
+
     override fun getItemCount(): Int {
         return differ.currentList.size
     }
 
-    fun submitList(blogList: List<BlogPost>?, isQueryExhausted: Boolean){
-        val newList = blogList?.toMutableList()
-        if (isQueryExhausted) {
-            newList?.add(NO_MORE_RESULTS_BLOG_MARKER)
-        }
-        val commitCallback = Runnable{
-            interaction?.resotreListPosition()
-        }
-        differ.submitList(newList, commitCallback)
-    }
-
+    // Prepare the images that will be displayed in the RecyclerView.
+    // This also ensures if the network connection is lost, they will be in the cache
     fun preloadGlideImages(
         requestManager: RequestManager,
         list: List<BlogPost>
@@ -137,13 +143,20 @@ class BlogListAdapter(
         }
     }
 
-    override fun getItemViewType(position: Int): Int {
-        if(differ.currentList[position].pk > -1){
-            return BLOG_ITEM
+    fun submitList(
+        blogList: List<BlogPost>?,
+        isQueryExhausted: Boolean
+    ){
+        val newList = blogList?.toMutableList()
+        if (isQueryExhausted)
+            newList?.add(NO_MORE_RESULTS_BLOG_MARKER)
+        val commitCallback = Runnable {
+            // if process died must restore list position
+            // very annoying
+            interaction?.restoreListPosition()
         }
-        return differ.currentList[position].pk
+        differ.submitList(newList, commitCallback)
     }
-
 
     class BlogViewHolder
     constructor(
@@ -161,7 +174,6 @@ class BlogListAdapter(
                 .load(item.image)
                 .transition(withCrossFade())
                 .into(itemView.blog_image)
-
             itemView.blog_title.text = item.title
             itemView.blog_author.text = item.username
             itemView.blog_update_date.text = DateUtils.convertLongToStringDate(item.date_updated)
@@ -169,7 +181,9 @@ class BlogListAdapter(
     }
 
     interface Interaction {
+
         fun onItemSelected(position: Int, item: BlogPost)
-        fun resotreListPosition()
+
+        fun restoreListPosition()
     }
 }

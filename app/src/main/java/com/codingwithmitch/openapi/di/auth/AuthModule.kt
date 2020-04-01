@@ -5,6 +5,7 @@ import com.codingwithmitch.openapi.api.auth.OpenApiAuthService
 import com.codingwithmitch.openapi.persistence.AccountPropertiesDao
 import com.codingwithmitch.openapi.persistence.AuthTokenDao
 import com.codingwithmitch.openapi.repository.auth.AuthRepository
+import com.codingwithmitch.openapi.repository.auth.AuthRepositoryImpl
 import com.codingwithmitch.openapi.session.SessionManager
 import dagger.Module
 import dagger.Provides
@@ -33,7 +34,7 @@ object AuthModule{
         sharedPreferences: SharedPreferences,
         editor: SharedPreferences.Editor
         ): AuthRepository {
-        return AuthRepository(
+        return AuthRepositoryImpl(
             authTokenDao,
             accountPropertiesDao,
             openApiAuthService,
